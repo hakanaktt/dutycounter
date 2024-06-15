@@ -1,45 +1,36 @@
-import tkinter as tk
-from tkinter import ttk
+from PyQt6.QtWidgets import QApplication, QHBoxLayout, QDialog, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLabel, QLineEdit, QMessageBox, QTableWidget, QTableWidgetItem, QHeaderView,  QTabWidget, QVBoxLayout
+from PyQt6.QtGui import QIcon
+from PyQt6.QtCore import Qt
 import sqlite3
+import sys
+import subprocess
 
-def fetch_data():
-    # Connect to SQLite database
-    conn = sqlite3.connect('example.db')
-    cursor = conn.cursor()
 
-    # Fetch data
-    cursor.execute('SELECT * FROM employees')
-    rows = cursor.fetchall()
+class MainInterface(QMainWindow):
+    def __init__(self):
+        super().__init__()
 
-    # Close the connection
-    conn.close()
+        self.setWindowTitle("Main Interface")
+        self.setGeometry(100, 100, 600, 400)
+        self.setWindowIcon(QIcon('adeko.ico'))
 
-    return rows
+        self.button = QPushButton("Open Employee Data", self)
+        self.button.setFixedSize(200, 50)
+        self.button.clicked.connect(self.open_employee_data)
 
-def display_table():
-    # Fetch data
-    rows = fetch_data()
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(self.button)
 
-    # Create the main window
-    root = tk.Tk()
-    root.title("Adeko Duty Counter")
+        self.central_widget = QWidget()
+        self.central_widget.setLayout(self.layout)
 
-    # Create Treeview
-    tree = ttk.Treeview(root, columns=("ID", "Name", "Age", "Department"), show='headings')
-    tree.heading("ID", text="ID")
-    tree.heading("Name", text="Name")
-    tree.heading("Age", text="Age")
-    tree.heading("Department", text="Department")
+        self.setCentralWidget(self.central_widget)
+        
+    def open_employee_data(self):
+        subprocess.run(["python", "C:/Git/dutycounter/libs/employeedata.py"])
 
-    # Insert data into Treeview
-    for row in rows:
-        tree.insert("", tk.END, values=row)
-
-    # Pack the Treeview widget
-    tree.pack(expand=True, fill='both')
-
-    # Start the Tkinter event loop
-    root.mainloop()
-
-# Call the function to display the table
-display_table()
+if __name__ == "__main__":
+    app = QApplication([])
+    main_interface = MainInterface()
+    main_interface.show()
+    app.exec()

@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
+import tkinter.messagebox as messagebox
 
 def create_employee():
     # Create a new window
@@ -59,6 +60,10 @@ def create_employee():
     submit_button.pack()
 
 def update_employee():
+    # Get the selected item
+    selected_item = tree.selection()[0]  # get selected item
+    selected_row = tree.item(selected_item)['values']
+
     # Create a new window
     new_window = tk.Toplevel()
     new_window.title("Update Employee")
@@ -66,6 +71,7 @@ def update_employee():
     # Create a label and entry widget for the employee ID
     id_label = tk.Label(new_window, text="Employee ID")
     id_entry = tk.Entry(new_window)
+    id_entry.insert(0, selected_row[0]) # insert the selected ID
 
     # Create labels and entry widgets for each field
     name_label = tk.Label(new_window, text="Name")
@@ -126,32 +132,28 @@ def update_employee():
     submit_button.pack()
 
 def delete_employee():
-    # Create a new window
-    new_window = tk.Toplevel()
-    new_window.title("Delete Employee")
+    global tree
 
-    # Create a label and entry widget for the employee ID
-    id_label = tk.Label(new_window, text="Employee ID")
-    id_entry = tk.Entry(new_window)
+    # Get the selected item
+    selected_item = tree.selection()[0]  # get selected item
+    selected_row = tree.item(selected_item)['values']
 
-    # Function to handle the submit button click
-    def submit():
+    # Ask for confirmation before deleting
+    if messagebox.askyesno("Confirmation", "Are you sure you want to delete this employee?"):
         # Connect to SQLite database
         conn = sqlite3.connect('data.db')
         cursor = conn.cursor()
 
         # Delete the employee
-        cursor.execute('DELETE FROM employees WHERE id = ?', (int(id_entry.get()),))
+        cursor.execute('DELETE FROM employees WHERE id = ?', (int(selected_row[0]),))
 
         # Commit changes and close the connection
         conn.commit()
         conn.close()
 
-        # Close the new window
-        new_window.destroy()
-
         # Refresh the table
         display_table()
+
 
     # Create the submit button
     submit_button = tk.Button(new_window, text="Submit", command=submit)

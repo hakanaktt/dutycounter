@@ -10,10 +10,7 @@ CREATE TABLE IF NOT EXISTS employees (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     department TEXT NOT NULL,
-    marketing BOOLEAN NOT NULL,
-    designing BOOLEAN NOT NULL,
-    scripting BOOLEAN NOT NULL,
-    machineknowledge BOOLEAN NOT NULL, 
+    cancomealone BOOLEAN NOT NULL, 
     numberOfHolidays INTEGER NOT NULL
 )
 ''')
@@ -37,7 +34,7 @@ CREATE TABLE IF NOT EXISTS holidaychart (
 ''')
 
 # Insert sample data
-cursor.execute('INSERT INTO employees (name, department, marketing, designing, scripting, machineknowledge, numberOfHolidays) VALUES (?, ?, ?, ?, ?, ?, ?)', ('Yusuf', 'Support', True, True, True, True, 10))
+cursor.execute('INSERT INTO employees (name, department, cancomealone, numberOfHolidays) VALUES (?, ?, ?, ?)', ('Yusuf', 'Support', True, 10))
 
 # Commit changes and close the connection
 conn.commit()
