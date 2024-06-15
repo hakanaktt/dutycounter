@@ -4,16 +4,14 @@ from PyQt6.QtCore import Qt
 import sqlite3
 import sys
 
-global dbpath, iconpath
-
 dbpath = "C:/Git/dutycounter/data.db"
 iconpath = "C:/Git/dutycounter/adeko.ico"
 
 class EmployeeDataApp(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setGeometry(100, 100, 900, 768)
-        self.setFixedSize(900, 768)
+        self.setGeometry(100, 100, 1100, 768)
+        self.setFixedSize(1100, 768)
         self.setWindowTitle("Employee Data")
         self.setWindowIcon(QIcon(iconpath))
 
@@ -63,11 +61,11 @@ class EmployeeDataApp(QMainWindow):
     def display_table(self):
         rows = self.fetch_data()
         self.table.setRowCount(0)
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["ID", "Name", "Department", "Can Come Alone", "Number of Holidays"])
+        self.table.setColumnCount(7)
+        self.table.setHorizontalHeaderLabels(["ID", "Name", "Department", "Can Come Alone","Been on duty this month","Last duty date", "Number of Holidays"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)  # Set fixed width for columns
-        for i in range(5):
-            self.table.setColumnWidth(i, 170)  # Set the width of each column to 100 pixels
+        for i in range(7):
+            self.table.setColumnWidth(i, 150)  # Set the width of each column to 100 pixels
         for row_data in rows:
             row_number = self.table.rowCount()
             self.table.insertRow(row_number)
@@ -113,6 +111,7 @@ class EmployeeDataApp(QMainWindow):
     
             # Delete the employee
             cursor.execute('DELETE FROM employees WHERE id = ?', (int(row_items[0]),))
+            cursor.execute('DELETE FROM notavailablepeople WHERE name = ?', (row_items[1],))
     
             # Commit changes and close the connection
             conn.commit()
@@ -145,8 +144,10 @@ class CreateEmployeeDialog(QDialog):
         conn = sqlite3.connect(dbpath)
         cursor = conn.cursor()
 
-        cursor.execute('INSERT INTO employees (name, department, cancomealone, numberOfHolidays) VALUES (?, ?, ?, ?)', 
-                       (self.entries["Name"].text(), self.entries["Department"].text(),  self.entries["Can Come Alone"].text() == "1", 0))
+        cursor.execute('INSERT INTO employees (name, department, cancomealone, beenonduty, lastdutydate, numberOfHolidays) VALUES (?, ?, ?, ?, ?, ?)', 
+                       (self.entries["Name"].text(), self.entries["Department"].text(),  self.entries["Can Come Alone"].text() == "1", 0, "", 0))
+
+        cursor.execute('INSERT INTO notavailablepeople (name, availability) VALUES (?, ?)', (self.entries["Name"].text(), 1))
 
         conn.commit()
         conn.close()
@@ -182,8 +183,9 @@ class UpdateEmployeeDialog(QDialog):
         cursor = conn.cursor()
 
         cursor.execute('UPDATE employees SET name = ?, department = ?, cancomealone = ?, numberOfHolidays = ? WHERE id = ?', 
-                       (self.entries["Name"].text(), self.entries["Department"].text(), self.entries["Can Come Alone"].text() == "1", int(self.entries["Number of Holidays"].text()), int(self.entries["Employee ID"].text())))
+                       (self.entries["Name"].text(), self.entries["Department"].text(), self.entries["Can Come Alone"].text() == "1",int(self.entries["Number of Holidays"].text()), int(self.entries["Employee ID"].text())))
 
+        cursor.execute('UPDATE notavailablepeople SET name = ? WHERE name = ?', (self.entries["Name"].text(), self.entries["Name"].text()))
         conn.commit()
         conn.close()
 

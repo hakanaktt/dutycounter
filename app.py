@@ -8,8 +8,11 @@ import subprocess
 import datetime
 
 font = QFont()
-font.setPointSize(14)
-font.setBold(True)
+font.setPointSize(12)
+
+font2 = QFont()
+font2.setPointSize(16)
+font2.setBold(True)
 
 class MainInterface(QMainWindow):
     def __init__(self):
@@ -72,21 +75,130 @@ class MainInterface(QMainWindow):
 
     # Set up the menu bar
         menubar = self.menuBar()
-        actions_menu = menubar.addMenu('Actions')
+        data_menu = menubar.addMenu('Data')
 
         open_action = QAction('See Employee Data', self)
         open_action.triggered.connect(self.open_employee_data)
-        actions_menu.addAction(open_action)
+        data_menu.addAction(open_action)
+
+        open_action = QAction('Duty Chart', self)
+        open_action.triggered.connect(self.all_time_duty_track)
+        data_menu.addAction(open_action)
+
+        open_action = QAction('Holiday Data', self)
+        open_action.triggered.connect(self.holiday_data)
+        data_menu.addAction(open_action)
 
         exit_action = QAction('Exit', self)
         exit_action.triggered.connect(self.close)
-        actions_menu.addAction(exit_action)
+        data_menu.addAction(exit_action)
+
+        action_menu = menubar.addMenu('Actions')
+
+        open_action = QAction('Set Availabilities', self)
+        open_action.triggered.connect(self.set_availabilities)
+        action_menu.addAction(open_action)
+
+        open_action = QAction('Add Offtime', self)
+        open_action.triggered.connect(self.add_offtime)
+        action_menu.addAction(open_action)
+
+        about_menu = menubar.addMenu('About')
+
+        about_action = QAction('About', self)
+        about_action.triggered.connect(self.about)
+        about_menu.addAction(about_action)
         
     def open_employee_data(self):
         subprocess.run(["python", "libs/employeedata.py"])
 
+    def set_availabilities(self):
+        subprocess.run(["python", "libs/selectunavailable.py"])
+
+    def all_time_duty_track(self):
+        subprocess.run(["python", "libs/dutydata.py"])
+
+    def holiday_data(self):
+        subprocess.run(["python", "libs/holidaydata.py"])
+    
+    def add_offtime(self):
+        subprocess.run(["python", "libs/addofftime.py"])
+
+    def about(self):
+        QMessageBox.about(self, "About Adeko Duty Tracker", "This is a simple duty tracker for Adeko. You can see the employees and their data, set their availabilities, and see the next duty information."  + "\n" + "This software is free to use and open source. It is developed with Python and PyQt6." + "\n" + "This software is not an official software of Adeko. It is developed by an Adeko employee for personal use." + "\n" + "\n" + "Developed by Hakan AK, an ADeko Employee, 2024")
+
+class LoginDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("Login")
+        self.setGeometry(100, 100, 300, 300)
+        self.setWindowIcon(QIcon('adeko.ico'))
+
+        self.layout = QVBoxLayout()
+        self.layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        self.layout.setContentsMargins(20, 20, 20, 20)
+
+        self.appIcon = QLabel()
+        self.appIcon.setPixmap(QIcon('adeko.ico').pixmap(100, 100))
+        self.layout.addWidget(self.appIcon)
+
+        self.appLabel= QLabel("Adeko Duty Tracker v.0.1")
+        self.appLabel.setFont(font2)
+        self.layout.addWidget(self.appLabel)
+
+        self.loginLabel= QLabel("Please enter your credentials")
+        self.loginLabel.setFont(font)
+        self.layout.addWidget(self.loginLabel)
+
+        self.username_label = QLabel("Username")
+        self.username_label.setFont(font)
+        self.layout.addWidget(self.username_label)
+
+        self.username_input = QLineEdit()
+        self.layout.addWidget(self.username_input)
+
+        self.password_label = QLabel("Password")
+        self.password_label.setFont(font)
+        self.layout.addWidget(self.password_label)
+
+        self.password_input = QLineEdit()
+        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.layout.addWidget(self.password_input)
+
+        self.login_button = QPushButton("Login")
+        self.login_button.clicked.connect(self.check_credentials)
+        self.layout.addWidget(self.login_button)
+
+        self.setLayout(self.layout)
+
+    def check_credentials(self):
+        username = self.username_input.text()
+        password = self.password_input.text()
+
+        # Connect to the database
+        conn = sqlite3.connect('data.db')
+        cursor = conn.cursor()
+
+        # Execute a query
+        cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
+
+        # Fetch all rows from the last executed statement
+        rows = cursor.fetchall()
+
+        # Close the connection
+        conn.close()
+
+        if rows:
+            self.accept()
+        else:
+            QMessageBox.warning(self, "Error", "Invalid username or password")
+
 if __name__ == "__main__":
     app = QApplication([])
-    main_interface = MainInterface()
-    main_interface.show()
-    app.exec()
+    login_dialog = LoginDialog()
+
+    if login_dialog.exec() == QDialog.DialogCode.Accepted:
+        main_interface = MainInterface()
+        main_interface.show()
+        app.exec()
