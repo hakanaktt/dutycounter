@@ -67,6 +67,9 @@ class Availability(QMainWindow):
             if checkbox.isChecked():
                 # Update the notavailablepeople table
                 cursor.execute("UPDATE notavailablepeople SET availability = '0' WHERE name = ?", (checkbox.text(),))
+            else:
+                # Update the notavailablepeople table
+                cursor.execute("UPDATE notavailablepeople SET availability = '1' WHERE name = ?", (checkbox.text(),))
 
         # Commit the changes and close the connection
         conn.commit()
