@@ -2,10 +2,8 @@
 from PyQt6.QtWidgets import QApplication, QHBoxLayout, QDialog, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLabel, QLineEdit, QMessageBox, QTableWidget, QTableWidgetItem, QHeaderView,  QTabWidget, QVBoxLayout
 from PyQt6.QtGui import QIcon, QAction, QFont
 from PyQt6.QtCore import Qt
-import sqlite3
-import sys
-import subprocess
-import datetime
+import sqlite3, subprocess, sys, datetime, random
+from operations import pick_two_people
 
 font = QFont()
 font.setPointSize(12)
@@ -56,22 +54,38 @@ class MainInterface(QMainWindow):
 
         self.setCentralWidget(self.central_widget)
 
-        #possible people who will be on duty next saturday
-        conn = sqlite3.connect('data.db')
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM employees WHERE cancomealone = ?', (True,))
-        rows = cursor.fetchall()
-        conn.close()
+        breakpoint = QLabel("\n" + "\n")
+        self.layout.addWidget(breakpoint)
 
-        if rows:
-            availablePeople = ', '.join([row[1] for row in rows])
-            self.label4 = QLabel(f"Gelmeye müsait olan kişiler: {availablePeople}")
-            self.label4.setFont(font)
-            self.layout.addWidget(self.label4)
-        else:
-            self.label4 = QLabel("No people can come alone")
-            self.label4.setFont(font)
-            self.layout.addWidget(self.label4)
+
+        #possible people who will be on duty next saturday
+        self.label4 = QLabel("Bir sonraki cumartesi nöbette olabilecekler: ")
+        self.label4.setFont(font)
+        self.layout.addWidget(self.label4)
+
+        chosen_people = pick_two_people()
+
+        self.label5 = QLabel(chosen_people[0] + " and " + chosen_people[1])
+        self.label5.setFont(font)
+        self.layout.addWidget(self.label5)
+
+        # Create a horizontal layout for the buttons
+        button_layout = QHBoxLayout()
+        self.layout.setContentsMargins(20, 20, 0, 0)
+
+        self.shuffleAgain = QPushButton("Yeniden karıştır")
+        self.shuffleAgain.setFixedWidth(100)
+        self.shuffleAgain.setFixedHeight(30)
+        self.shuffleAgain.clicked.connect(self.shuffle)
+        button_layout.addWidget(self.shuffleAgain)
+
+        self.confirmChoice = QPushButton("Onayla")
+        self.confirmChoice.setFixedWidth(100)
+        self.confirmChoice.setFixedHeight(30)
+        self.confirmChoice.clicked.connect(self.confirm)
+        button_layout.addWidget(self.confirmChoice)
+
+        self.layout.addLayout(button_layout)
 
     # Set up the menu bar
         menubar = self.menuBar()
@@ -108,21 +122,45 @@ class MainInterface(QMainWindow):
         about_action = QAction('About', self)
         about_action.triggered.connect(self.about)
         about_menu.addAction(about_action)
-        
+
+    def shuffle(self):
+        chosen_people = pick_two_people()
+        self.label5.setText(chosen_people[0] + " and " + chosen_people[1])
+
     def open_employee_data(self):
-        subprocess.run(["python", "libs/employeedata.py"])
+        subprocess.run(["python", "employeedata.py"])
 
     def set_availabilities(self):
-        subprocess.run(["python", "libs/selectunavailable.py"])
+        subprocess.run(["python", "selectunavailable.py"])
 
     def all_time_duty_track(self):
-        subprocess.run(["python", "libs/dutydata.py"])
+        subprocess.run(["python", "dutydata.py"])
 
     def holiday_data(self):
-        subprocess.run(["python", "libs/holidaydata.py"])
+        subprocess.run(["python", "holidaydata.py"])
     
     def add_offtime(self):
-        subprocess.run(["python", "libs/addofftime.py"])
+        subprocess.run(["python", "addofftime.py"])
+
+    def confirm(self):
+        conn = sqlite3.connect('data.db')
+        cursor = conn.cursor()
+    
+        # Calculate the date
+        date = str(datetime.date.today() + datetime.timedelta((5-datetime.date.today().weekday()) % 7))
+    
+        # Check if there is a registry on the same date
+        cursor.execute('SELECT * FROM dutychart WHERE date = ?', (date,))
+        rows = cursor.fetchall()
+    
+        if rows:
+            QMessageBox.warning(self, 'Warning', 'There is already a registry on this date.')
+        else:
+            cursor.execute('INSERT INTO dutychart (date, firstonduty, secondonduty) VALUES (?, ?, ?)', (date, self.label5.text().split(" and ")[0], self.label5.text().split(" and ")[1]))
+            conn.commit()
+            self.label5.setText("Onaylandı")
+    
+        conn.close()
 
     def about(self):
         QMessageBox.about(self, "About Adeko Duty Tracker", "This is a simple duty tracker for Adeko. You can see the employees and their data, set their availabilities, and see the next duty information."  + "\n" + "This software is free to use and open source. It is developed with Python and PyQt6." + "\n" + "This software is not an official software of Adeko. It is developed by an Adeko employee for personal use." + "\n" + "\n" + "Developed by Hakan AK, an ADeko Employee, 2024")

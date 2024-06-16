@@ -4,8 +4,8 @@ from PyQt6.QtCore import Qt
 import sqlite3
 import sys
 
-dbpath = "../data.db"
-iconpath = "../adeko.ico"
+dbpath = "data.db"
+iconpath = "adeko.ico"
 
 class EmployeeDataApp(QMainWindow):
     def __init__(self):
