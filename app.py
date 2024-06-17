@@ -12,13 +12,40 @@ font2 = QFont()
 font2.setPointSize(16)
 font2.setBold(True)
 
+appVersion = "0.1 Alpha"
+
 class MainInterface(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Adeko Duty Tracker")
+        self.setWindowTitle(f"Adeko Duty Tracker v.{appVersion}")
         self.setGeometry(100, 100, 600, 400)
+        self.setFixedSize(600, 400)
         self.setWindowIcon(QIcon('adeko.ico'))
+        
+        self.setStyleSheet("""
+            QMainWindow {
+                background-color: #f82e00;
+                color: white;
+            }
+            QLabel {
+                color: white;
+                font-size: 16px;
+            }
+            QPushButton {
+                background-color: #f82e00;
+                height: 30px;
+                color: white;
+                border: 1px solid white;
+                border-radius: 5px;
+                padding: 3px;
+                margin: 5px;
+            }
+            QPushButton:hover {
+                background-color: white;
+                color: #f82e00;
+            }
+        """)
 
         # Calculate next saturday
         self.layout = QVBoxLayout()
@@ -42,7 +69,7 @@ class MainInterface(QMainWindow):
         rows = cursor.fetchall()
         conn.close()
         if rows:
-            self.label3 = QLabel("Geçen cumartesi nöbette olanlar: " + rows[0][2] + " and " + rows[0][3])
+            self.label3 = QLabel("Geçen cumartesi nöbette olanlar: " + rows[0][2] + " ve " + rows[0][3])
             self.label3.setFont(font)
         else:
             self.label3 = QLabel("Geçen cumartesi nöbette olanlar hakkında veri yok")
@@ -57,7 +84,6 @@ class MainInterface(QMainWindow):
         breakpoint = QLabel("\n" + "\n")
         self.layout.addWidget(breakpoint)
 
-
         #possible people who will be on duty next saturday
         self.label4 = QLabel("Bir sonraki cumartesi nöbette olabilecekler: ")
         self.label4.setFont(font)
@@ -65,23 +91,25 @@ class MainInterface(QMainWindow):
 
         chosen_people = pick_two_people()
 
-        self.label5 = QLabel(chosen_people[0] + " and " + chosen_people[1])
+        self.label5 = QLabel(chosen_people[0] + " ve " + chosen_people[1])
         self.label5.setFont(font)
         self.layout.addWidget(self.label5)
-
+        self.layout.addStretch(1)
         # Create a horizontal layout for the buttons
         button_layout = QHBoxLayout()
         self.layout.setContentsMargins(20, 20, 0, 0)
 
         self.shuffleAgain = QPushButton("Yeniden karıştır")
+        self.shuffleAgain.setObjectName("shuffleAgainButton")
         self.shuffleAgain.setFixedWidth(100)
-        self.shuffleAgain.setFixedHeight(30)
+        self.shuffleAgain.setFixedHeight(40)
         self.shuffleAgain.clicked.connect(self.shuffle)
         button_layout.addWidget(self.shuffleAgain)
 
         self.confirmChoice = QPushButton("Onayla")
+        self.confirmChoice.setObjectName("confirmChoiceButton")
         self.confirmChoice.setFixedWidth(100)
-        self.confirmChoice.setFixedHeight(30)
+        self.confirmChoice.setFixedHeight(40)
         self.confirmChoice.clicked.connect(self.confirm)
         button_layout.addWidget(self.confirmChoice)
 
@@ -89,6 +117,26 @@ class MainInterface(QMainWindow):
 
     # Set up the menu bar
         menubar = self.menuBar()
+        menubar.setStyleSheet("""
+            QMenu {
+                background-color: #f0f0f0;
+                color: black;
+                border: 1px solid black;
+                padding: 2px;
+            }
+            QMenu::item:selected { /* when user selects item using mouse or keyboard */
+                background-color: #dcdcdc;
+            }
+            QAction {
+                padding-left: 0px;
+                margin-left: 0px;
+            }
+            QAction:hover {
+                background-color: #dcdcdc;
+            }
+        """)
+        
+        # ... rest of your code ...
         data_menu = menubar.addMenu('Data')
 
         open_action = QAction('See Employee Data', self)
@@ -99,7 +147,7 @@ class MainInterface(QMainWindow):
         open_action.triggered.connect(self.all_time_duty_track)
         data_menu.addAction(open_action)
 
-        open_action = QAction('Holiday Data', self)
+        open_action = QAction('Offtime Data', self)
         open_action.triggered.connect(self.holiday_data)
         data_menu.addAction(open_action)
 
@@ -111,10 +159,6 @@ class MainInterface(QMainWindow):
 
         open_action = QAction('Set Availabilities', self)
         open_action.triggered.connect(self.set_availabilities)
-        action_menu.addAction(open_action)
-
-        open_action = QAction('Add Offtime', self)
-        open_action.triggered.connect(self.add_offtime)
         action_menu.addAction(open_action)
 
         about_menu = menubar.addMenu('About')
@@ -139,10 +183,11 @@ class MainInterface(QMainWindow):
     def holiday_data(self):
         subprocess.run(["python", "holidaydata.py"])
     
-    def add_offtime(self):
-        subprocess.run(["python", "addofftime.py"])
 
     def confirm(self):
+        #calculate the month in format e.g. "June 2024"
+        currentMonth = datetime.date.today().strftime("%B %Y")
+        # Connect to the database
         conn = sqlite3.connect('data.db')
         cursor = conn.cursor()
     
@@ -156,7 +201,11 @@ class MainInterface(QMainWindow):
         if rows:
             QMessageBox.warning(self, 'Warning', 'There is already a registry on this date.')
         else:
-            cursor.execute('INSERT INTO dutychart (date, firstonduty, secondonduty) VALUES (?, ?, ?)', (date, self.label5.text().split(" and ")[0], self.label5.text().split(" and ")[1]))
+            cursor.execute('INSERT INTO dutychart (date, firstonduty, secondonduty, month) VALUES (?, ?, ?, ?)', (date, self.label5.text().split(" ve ")[0], self.label5.text().split(" ve ")[1], currentMonth))
+            cursor.execute('UPDATE employees SET beenonduty = 1, lastdutydate = ? WHERE name = ?', (date, self.label5.text().split(" ve ")[0]))
+            cursor.execute('UPDATE employees SET beenonduty = 1, lastdutydate = ? WHERE name = ?', (date, self.label5.text().split(" ve ")[1]))
+            cursor.execute('UPDATE employees SET numberOfHolidays = numberOfHolidays + 1 WHERE name = ?', (self.label5.text().split(" ve ")[0],))
+            cursor.execute('UPDATE employees SET numberOfHolidays = numberOfHolidays + 1 WHERE name = ?', (self.label5.text().split(" ve ")[1],))
             conn.commit()
             self.label5.setText("Onaylandı")
     
@@ -181,7 +230,7 @@ class LoginDialog(QDialog):
         self.appIcon.setPixmap(QIcon('adeko.ico').pixmap(100, 100))
         self.layout.addWidget(self.appIcon)
 
-        self.appLabel= QLabel("Adeko Duty Tracker v.0.1")
+        self.appLabel= QLabel(f"Adeko Duty Tracker v.{appVersion}")
         self.appLabel.setFont(font2)
         self.layout.addWidget(self.appLabel)
 

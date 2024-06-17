@@ -30,7 +30,8 @@ CREATE TABLE IF NOT EXISTS dutychart (
     id INTEGER PRIMARY KEY,
     date TEXT NOT NULL,
     firstonduty TEXT NOT NULL,
-    secondonduty TEXT NOT NULL
+    secondonduty TEXT NOT NULL,
+    month TEXT NOT NULL
 )
 ''')
 

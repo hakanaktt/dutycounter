@@ -75,5 +75,3 @@ def pick_two_people():
     
     # Return the two chosen people
     return chosen_people
-
-chosen_people = pick_two_people()
