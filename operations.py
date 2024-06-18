@@ -54,14 +54,30 @@ def setDutyData(firstPerson, secondPerson):
     else:
     # Insert the duty data into the database
         cursor.execute('INSERT INTO dutychart (date, firstonduty, secondonduty, dateMonth, dateYear) VALUES (?, ?, ?, ?, ?)', (nextDutyDate, firstPerson, secondPerson, nextDutyMonth, nextDutyYear))
-        cursor.execute('UPDATE employees SET beenonduty = ? WHERE name = ?', (1, firstPerson))
-        cursor.execute('UPDATE employees SET beenonduty = ? WHERE name = ?', (1, secondPerson))
         cursor.execute('UPDATE employees SET lastdutydate = ? WHERE name = ?', (nextDutyDate, firstPerson))
         cursor.execute('UPDATE employees SET lastdutydate = ? WHERE name = ?', (nextDutyDate, secondPerson))
         # Commit the changes
         conn.commit()
 
         # Close the connection
+    conn.close()
+
+############################################################################################################################
+
+#delete duty data(works as intended)
+def deleteDutyData(date):
+    import sqlite3
+    # Connect to the database
+    conn = sqlite3.connect('data.db')
+    cursor = conn.cursor()
+
+    # Delete the duty data from the database
+    cursor.execute('DELETE FROM dutychart WHERE date = ?', (date,))
+
+    # Commit the changes
+    conn.commit()
+
+    # Close the connection
     conn.close()
 
 ############################################################################################################################
@@ -88,6 +104,29 @@ def checkNextDutyData():
     #returns true if the duty data is set, returns false if the duty data is not set
 
 ############################################################################################################################
+
+def bringNextDutyData():
+    import sqlite3
+    # Connect to the database
+    conn = sqlite3.connect('data.db')
+    cursor = conn.cursor()
+
+    # Find the next Saturday
+    next_saturday_str = findNextSaturday()[0]
+
+    # Get the duty data for the next Saturday
+    cursor.execute('SELECT * FROM dutychart WHERE date = ?', (next_saturday_str,))
+    rows = cursor.fetchall()
+
+    # Close the connection
+    conn.close()
+
+    # Return the duty data for the next Saturday
+    return rows
+    #returns an array like this: [('22-06-24', 'Hakan AK', 'Emrah DURAN', 'June', '2024')]
+
+############################################################################################################################
+print(bringNextDutyData())
 
 #DUTY DATA REPORTING OPERATIONS
 
@@ -269,106 +308,112 @@ def lastMonthDutyCheck(person):
     return False
     #returns false if the person didnt have duty this month, returns true and prints duty times if the person had duty this month
 
-############################################################################################################################4
+############################################################################################################################
+
+def peopleWhoHadDutyBeforeThisMonth():
+    import sqlite3, datetime
+    # Write first day of this month and current day
+    today = datetime.date.today()
+    first_day_of_this_month = today.replace(day=1)
+    first_day_of_this_month_str = first_day_of_this_month.strftime('%d-%m-%y')
+    today_str = today.strftime('%d-%m-%y')
+
+    # Get the duty data of the last month
+    conn = sqlite3.connect('data.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM dutychart WHERE date BETWEEN ? AND ?', (first_day_of_this_month_str, today_str))
+    rows = cursor.fetchall()
+    conn.close()
+
+    # Check if the person had duty in the this month
+    duty_set = set()
+    for row in rows:
+        for person in [row[2], row[3]]:
+            duty_set.add(person)
+
+    return duty_set
+    
+############################################################################################################################
 
 #Pick two person for the next duty(works as intended for now)
-def pickTwoPeople():
-    import sqlite3, random
-    #add name of all employees to on another list
-    conn = sqlite3.connect('data.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM employees')
-    rows = cursor.fetchall()
-    conn.close()
-    allPeople = [row[1] for row in rows]
+def pickDutyDuo():
+    import random, itertools
 
-    #draw the names of the people who has "0" for availability value from notavailablepeople table to a list
-    conn = sqlite3.connect('data.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM notavailablepeople WHERE availability = ?', ('0',))
-    rows = cursor.fetchall()
-    conn.close()
-    notAvailablePeopleAtAll = [row[1] for row in rows]
+    availablePeople = setAvailableGroup()
 
+    allPossiblePairs = list(itertools.combinations(availablePeople, 2))
+    validPairs = []
+    
+    for pair in allPossiblePairs:
+        member1, member2 = pair
+        if {member1, member2}.issubset(setGroups()[0]):
+            continue
+        if {member1, member2}.issubset(setGroups()[2]):
+            continue
+        validPairs.append(pair)
+    
+    #Randomly choose a pair from validPairs
+
+    choosenPair = list(random.choice(validPairs))
+    print(choosenPair)
+    print(f"Choosen pair is {choosenPair[0]} and {choosenPair[1]}")
+
+    return choosenPair
+    #returns an array like this: ['Hakan AK', 'Emrah DURAN']
+############################################################################################################################
+
+#report the people who are available for duty(works as intended)
+
+def setGroups():
+    import sqlite3
     #groups are set
     conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM employees WHERE "group" = ?', ('1',))
     rows = cursor.fetchall()
     conn.close()
-    group1 = [row[1] for row in rows]
+    group1 = {row[1] for row in rows}
     
     conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM employees WHERE "group" = ?', ('2',))
     rows = cursor.fetchall()
     conn.close()
-    group2 = [row[1] for row in rows]
+    group2 = {row[1] for row in rows}
     
     conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM employees WHERE "group" = ?', ('3',))
     rows = cursor.fetchall()
     conn.close()
-    group3 = [row[1] for row in rows]
+    group3 = {row[1] for row in rows}
 
-    #arrays are set
-    availablePeople = [i for i in allPeople if i not in notAvailablePeopleAtAll]
-    availableGroup1 = [i for i in group1 if i not in notAvailablePeopleAtAll]
-    availableGroup2 = [i for i in group2 if i not in notAvailablePeopleAtAll]
-    availableGroup3 = [i for i in group3 if i not in notAvailablePeopleAtAll]                        
+    return group1, group2, group3
 
-    # Resultant list to store the two chosen people
-    chosen_people = []
-    possible_first_person = ""
-    possible_second_person = ""
+############################################################################################################################
+
+def setAbsentiaGroup():
+    import sqlite3
+    #groups are set
+    conn = sqlite3.connect('data.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM notavailablepeople WHERE availability = ?', ('0',))
+    rows = cursor.fetchall()
+    conn.close()
+    peopleInAbsentia = {row[1] for row in rows}
+
+    return peopleInAbsentia
+
+############################################################################################################################
+
+def setAvailableGroup():
     
-    #shuffle lists
-    random.shuffle(availablePeople)
+    allMembers = setGroups()[0].union(setGroups()[1]).union(setGroups()[2])
+    peopleInAbsentia = setAbsentiaGroup()
+    peopleHadDutybefore = peopleWhoHadDutyBeforeThisMonth()
 
-    for possible_first_person in availablePeople:
-        if lastMonthDutyCheck(possible_first_person):
-            continue
-    
-        if possible_first_person in availableGroup1:
-            availableGroup2.extend(availableGroup3)
-            random.shuffle(availableGroup2)
-            possible_second_person = availableGroup2[0]
-            if possible_second_person == possible_first_person or lastMonthDutyCheck(possible_second_person):
-                continue
-            chosen_people.append(possible_first_person)
-            chosen_people.append(possible_second_person)
-            if len(chosen_people) >= 2:
-                break
-        elif possible_first_person in availableGroup2:
-            availableGroup2.remove(possible_first_person)
-            availableGroup1.extend(availableGroup3)
-            availableGroup1.extend(availableGroup2)
-            random.shuffle(availableGroup1)
-            possible_second_person = availableGroup1[0]
-            if possible_second_person == possible_first_person or lastMonthDutyCheck(possible_second_person):
-                continue
-            chosen_people.append(possible_first_person)
-            chosen_people.append(possible_second_person)
-            if len(chosen_people) >= 2:
-                break
-        elif possible_first_person in availableGroup3:
-            availableGroup1.extend(availableGroup2)
-            random.shuffle(availableGroup1)
-            possible_second_person = availableGroup1[0]
-            if possible_second_person == possible_first_person or lastMonthDutyCheck(possible_second_person):
-                continue
-            chosen_people.append(possible_first_person)
-            chosen_people.append(possible_second_person)
-            if len(chosen_people) >= 2:
-                break
+    peopleAvailable = allMembers - peopleInAbsentia - peopleHadDutybefore
 
-    # If no person was chosen, return an empty list
-    if not chosen_people:
-        return []
-    
-    # Return the two chosen people
-    return chosen_people
-    #returns an array like this: ['Hakan AK', 'Emrah DURAN']
+    return peopleAvailable
 
-print(pickTwoPeople())
+############################################################################################################################

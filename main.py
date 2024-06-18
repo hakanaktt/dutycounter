@@ -3,17 +3,18 @@ from PyQt6.QtWidgets import QApplication, QDialog, QMainWindow, QPushButton, QVB
 from PyQt6.QtGui import QIcon, QFont
 from PyQt6.QtCore import Qt
 import sqlite3, subprocess, datetime
-from operations import pickTwoPeople
+from operations import pickDutyDuo, setAvailableGroup, findNextSaturday, checkNextDutyData, bringNextDutyData, setDutyData
 
-chosen_people = []
+global chosenDuo
+
 
 Form, Window = uic.loadUiType("dialog.ui")
-appVersion = "0.1 Alpha"
+appVersion = "0.2 Alpha"
 font = QFont()
 font.setPointSize(12)
 
 font2 = QFont()
-font2.setPointSize(16)
+font2.setPointSize(12)
 font2.setBold(True)
 
 class MainInterface(QMainWindow):
@@ -21,7 +22,9 @@ class MainInterface(QMainWindow):
         super().__init__()
         self.ui = Form()
         self.ui.setupUi(self)
-        self.setPossiblePeople()
+        self.chosenDuo = None
+        self.setStatus()
+        self.showAvailablePeople()
 
         self.setWindowTitle(f"Adeko Duty Tracker v.{appVersion}")
         self.setWindowIcon(QIcon('adeko.ico'))
@@ -45,31 +48,49 @@ class MainInterface(QMainWindow):
 
         #Main interface labels
         self.ui.mainLabel.setFont(font2)
-        self.ui.mainLabel.setText(f"BuĞ hafta muhtemel nöbetçileri:")
-        self.ui.firstPossiblePerson.setFont(font)
-        self.ui.secondPossiblePerson.setFont(font)
+        self.ui.availablePeopleLabel.setFont(font)
+        self.ui.availablePeopleLabel.setText(f"{findNextSaturday()[0]} Cumartesi müsait kişiler:")
+        self.ui.possibleCandidates.setFont(font)
 
     #Function that sets the possible people for the duty for the start of the application
     def setPossiblePeople(self):
-        chosen_people = pickTwoPeople()
-        self.ui.firstPossiblePerson.setText(chosen_people[0])
-        self.ui.secondPossiblePerson.setText(chosen_people[1])
-        print(chosen_people)
+        chosenDuo = pickDutyDuo()
+        self.ui.possibleCandidates.setText(f"{chosenDuo[0]} ve {chosenDuo[1]}")
+
+    def showAvailablePeople(self):
+        availablePeople = setAvailableGroup()
+        availablePeopleList = ""
+
+        for member in availablePeople:
+            availablePeopleList += member + "\n"
+        self.ui.availablePeopleList.setText(availablePeopleList)
+
     #Shuffle Button Function
     def shuffle(self):
-        chosen_people = pickTwoPeople()
-        self.ui.firstPossiblePerson.setText(chosen_people[0])
-        self.ui.secondPossiblePerson.setText(chosen_people[1])
-        print(chosen_people)
+        print("Shuffle button clicked")
+        self.chosenDuo = pickDutyDuo()
+        self.ui.firstPossiblePerson.setText(chosenDuo[0])
+        self.ui.secondPossiblePerson.setText(chosenDuo[1])
     #Confirm Button Function
     def confirm(self):
-        global chosen_people
-        conn = sqlite3.connect('data.db')
-        cursor = conn.cursor()
-        cursor.execute("INSERT INTO duties (first_person, second_person, date) VALUES (?, ?, ?)", (chosen_people[0], chosen_people[1], datetime.datetime.now()))
-        conn.commit()
-        conn.close()
+        setDutyData(self.chosenDuo[0], self.chosenDuo[1])
+        self.ui.shuffleSelection.setEnabled(False)
+        self.ui.confirmSelection.setEnabled(False)        
         QMessageBox.information(self, "Success", "The selection is saved successfully.")
+
+    def setStatus(self):
+        if checkNextDutyData():
+            self.ui.mainLabel.setText(f"{findNextSaturday()[0]} Cumartesi günü nöbetçileri belirlendi:")
+            nextDutyData = bringNextDutyData()
+            self.ui.possibleCandidates.setText(f"{nextDutyData[0][2]} ve {nextDutyData[0][3]}")
+            self.ui.shuffleSelection.setEnabled(False)
+            self.ui.confirmSelection.setEnabled(False)
+        else:
+            self.ui.mainLabel.setText(f"{findNextSaturday()[0]} Cumartesi günü muhtemel nöbetçileri:")
+            self.chosenDuo = pickDutyDuo()
+            self.ui.possibleCandidates.setText(f"{self.chosenDuo[0]} ve {self.chosenDuo[1]}")
+            self.ui.shuffleSelection.setEnabled(True)
+            self.ui.confirmSelection.setEnabled(True)
 
     #Menu bar functions
     def open_employee_data(self):
