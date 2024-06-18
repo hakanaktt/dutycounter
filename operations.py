@@ -1,8 +1,8 @@
-import sqlite3, random, datetime
+############################################################################################################################
 
-#Find next saturday
-def find_next_saturday():
-
+#Find next saturday(works as intended)
+def findNextSaturday():
+    import datetime
     calendarData = []
     # Find the next Saturday
     # Get the current date
@@ -32,50 +32,70 @@ def find_next_saturday():
     calendarData.append(current_month)
     calendarData.append(current_year)
     return calendarData
+    #returns an array like this: ['22-06-24', 'June', '2024']
 
-#FBring this month's duty data
-def thisMonthDutyData():
-    
-        # Find the first and last day of the current month
-        current_date = datetime.date.today()
-        first_day = current_date.replace(day=1)
-        last_day = current_date.replace(day=28) + datetime.timedelta(days=4)
-    
-        # Calculate the first and last day of the current month
-        first_day_of_month = first_day.strftime('%Y-%m-%d')
-        last_day_of_month = last_day.strftime('%Y-%m-%d')
-    
-        # Get the duty data of the current month
-        conn = sqlite3.connect('data.db')
-        cursor = conn.cursor()
-        cursor.execute('SELECT * FROM dutychart WHERE date BETWEEN ? AND ?', (first_day_of_month, last_day_of_month))
-        rows = cursor.fetchall()
-        conn.close()
-    
-        return rows
+############################################################################################################################
 
 #Set next saturday's duty data
-def setDutyData(date, first_person, second_person):
+def setDutyData(firstPerson, secondPerson):
+    import sqlite3
     # Connect to the database
     conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
 
+    nextSaturdayData = findNextSaturday()
+
+    nextDutyDate = nextSaturdayData[0]
+    nextDutyMonth = nextSaturdayData[1]
+    nextDutyYear = nextSaturdayData[2] 
+
+    if checkNextDutyData():
+        return
+    else:
     # Insert the duty data into the database
-    cursor.execute('INSERT INTO dutychart (date, first_person, second_person) VALUES (?, ?, ?)', (date, first_person, second_person))
-    cursor.execute('UPDATE employees SET beenonduty = ? WHERE name = ?', (1, first_person))
-    cursor.execute('UPDATE employees SET beenonduty = ? WHERE name = ?', (1, second_person))
-    cursor.execute('UPDATE employee SET lasdutydate = ? WHERE name = ?', (date, first_person))
-    cursor.execute('UPDATE employee SET lasdutydate = ? WHERE name = ?', (date, second_person))
-    # Commit the changes
-    conn.commit()
+        cursor.execute('INSERT INTO dutychart (date, firstonduty, secondonduty, dateMonth, dateYear) VALUES (?, ?, ?, ?, ?)', (nextDutyDate, firstPerson, secondPerson, nextDutyMonth, nextDutyYear))
+        cursor.execute('UPDATE employees SET beenonduty = ? WHERE name = ?', (1, firstPerson))
+        cursor.execute('UPDATE employees SET beenonduty = ? WHERE name = ?', (1, secondPerson))
+        cursor.execute('UPDATE employees SET lastdutydate = ? WHERE name = ?', (nextDutyDate, firstPerson))
+        cursor.execute('UPDATE employees SET lastdutydate = ? WHERE name = ?', (nextDutyDate, secondPerson))
+        # Commit the changes
+        conn.commit()
+
+        # Close the connection
+    conn.close()
+
+############################################################################################################################
+
+#function that checks whether a duty data is set for next saturday
+def checkNextDutyData():
+    import sqlite3
+    # Connect to the database
+    conn = sqlite3.connect('data.db')
+    cursor = conn.cursor()
+
+    # Find the next Saturday
+    next_saturday_str = findNextSaturday()[0]
+
+    # Check if the duty data for the next Saturday is already in the database
+    cursor.execute('SELECT * FROM dutychart WHERE date = ?', (next_saturday_str,))
+    rows = cursor.fetchall()
 
     # Close the connection
     conn.close()
 
-#Bring last three duty dates
+    # Return True if the duty data is set, False otherwise
+    return bool(rows)
+    #returns true if the duty data is set, returns false if the duty data is not set
+
+############################################################################################################################
+
+#DUTY DATA REPORTING OPERATIONS
+
+#Bring the last three duty dates(works as intended)
 def lastThreeDutyDates():
+    import datetime
     # Find the next Saturday
-    next_saturday_str = find_next_saturday()[0]
+    next_saturday_str = findNextSaturday()[0]
     next_saturday = datetime.datetime.strptime(next_saturday_str, "%y-%m-%d")  # adjust the format string as per your date format
 
     # Calculate the dates of the last three Saturdays
@@ -92,10 +112,168 @@ def lastThreeDutyDates():
 
     # Return the formatted dates
     return formatted_dates
+    #returns an array like this: ['22-06-24', '15-06-24', '08-06-24']
+############################################################################################################################
 
-#Pick two person for the next duty
+#Bring this month's duty data(works as intended)
+def thisMonthDutyData():
+        import datetime, sqlite3
+        # Find the first and last day of the current month
+        current_date = datetime.date.today()
+        first_day = current_date.replace(day=1)
+    
+        # Calculate the first and last day of the current month
+        first_day_of_month = first_day.strftime('%d-%m-%y')
+        current_day_of_month= current_date.strftime('%d-%m-%y')
+    
+        # Get the duty data of the current month
+        conn = sqlite3.connect('data.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM dutychart WHERE date BETWEEN ? AND ?', (first_day_of_month, current_day_of_month))
+        rows = cursor.fetchall()
+        conn.close()
+    
+        return rows
+        #let us say next saturday is at 22-06-2024
+        #returns an array of arrays like this: [(2, '01-06-24', 'Kerem TÜRKEÇ', 'Hakan AK', 'June', '2024'), (3, '08-06-24', 'Emrah Duran', 'Mine AKTAŞ', 'June', '2024'), (4, '15-06-24', 'Hakan AK', 'Fatih ALGIN', 'June', '2024')]
+############################################################################################################################
+
+#Bring this year's duty data(works as intended)
+def thisYearDutyData():
+        import datetime, sqlite3
+        # Find the first and last day of the current year
+        current_date = datetime.date.today()
+        first_day = current_date.replace(month=1, day=1)
+        last_day = current_date.replace(month=12, day=31)
+        
+        # Calculate the first and last day of the current year
+        first_day_of_year = first_day.strftime('%d-%m-%y')
+        last_day_of_year = last_day.strftime('%d-%m-%y')
+        
+        # Get the duty data of the current year
+        conn = sqlite3.connect('data.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM dutychart WHERE date BETWEEN ? AND ?', (first_day_of_year, last_day_of_year))
+        rows = cursor.fetchall()
+        conn.close()
+        
+        return rows
+        #returns an array of arrays like this: [('22-06-24', 'Hakan AK', 'Emrah DURAN', 'June', '2024'), ('29-06-24', 'Emrah DURAN', 'Hakan AK', 'June', '2024')]
+
+############################################################################################################################
+
+#Calculate the number of duties of the each person in the selected year(works as intended)
+def dutyCountInSelectedYear(year):
+    import datetime, sqlite3
+    # Find the first and last day of the selected year
+    first_day = datetime.date(year, 1, 1)
+    last_day = datetime.date(year, 12, 31)
+    
+    # Calculate the first and last day of the selected year
+    first_day_of_year = first_day.strftime('%d-%m-%y')
+    last_day_of_year = last_day.strftime('%d-%m-%y')
+    
+    # Get the duty data of the selected year
+    conn = sqlite3.connect('data.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT firstonduty, secondonduty FROM dutychart WHERE date BETWEEN ? AND ?', (first_day_of_year, last_day_of_year))
+    rows = cursor.fetchall()
+    conn.close()
+    
+    # Create a dictionary to store the number of duties for each person
+    duties = {}
+    
+    # Iterate through the duty data and count the number of duties for each person
+    for row in rows:
+        for person in row:
+            if person not in duties:
+                duties[person] = 1
+            else:
+                duties[person] += 1
+    
+    # Return the number of duties for each person
+    return duties
+
+    #returns a dictionary like this: {'Hakan AK': 3, 'Emrah DURAN': 1, 'Kerem TÜRKEÇ': 1, 'Emrah Duran': 1, 'Mine AKTAŞ': 1, 'Fatih ALGIN': 1}
+
+############################################################################################################################
+
+#Find Mins and maxes of the year (works as intended)
+def minMaxDutyInSelectedYear(year):
+    import datetime, sqlite3
+    # Find the first and last day of the selected year
+    first_day = datetime.date(year, 1, 1)
+    last_day = datetime.date(year, 12, 31)
+    
+    # Calculate the first and last day of the selected year
+    first_day_of_year = first_day.strftime('%d-%m-%y')
+    last_day_of_year = last_day.strftime('%d-%m-%y')
+    
+    #Find the people who has most duties and least duties in the selected year
+    conn = sqlite3.connect('data.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT firstonduty, secondonduty FROM dutychart WHERE date BETWEEN ? AND ?', (first_day_of_year, last_day_of_year))
+    rows = cursor.fetchall()
+    conn.close()
+
+    # Create a dictionary to store the number of duties for each person
+    duties = {}
+
+    # Iterate through the duty data and count the number of duties for each person
+    for row in rows:
+        for person in row:
+            if person not in duties:
+                duties[person] = 1
+            else:
+                duties[person] += 1
+
+    # Find the person with the most duties
+    most_duties = [max(duties, key=duties.get), duties[max(duties, key=duties.get)]]
+    # Find the person with the least duties
+    least_duties = [min(duties, key=duties.get), duties[min(duties, key=duties.get)]]
+    #Also return the number of duties for the person with the most duties
+
+    minMaxduties = [most_duties, least_duties]
+
+    # Return the person with the most and least duties
+    return minMaxduties
+    #output = [['Hakan AK', 3], ['Emrah DURAN', 1]] two arrays inside 1 array
+
+
+############################################################################################################################
+
+
+#Function that checks whether the person had duty in this month(works as intended)
+def lastMonthDutyCheck(person):
+    import sqlite3, datetime
+    # Write first day of this month and current day
+    today = datetime.date.today()
+    first_day_of_this_month = today.replace(day=1)
+    first_day_of_this_month_str = first_day_of_this_month.strftime('%d-%m-%y')
+    today_str = today.strftime('%d-%m-%y')
+
+    # Get the duty data of the last month
+    conn = sqlite3.connect('data.db')
+    cursor = conn.cursor()
+    cursor.execute('SELECT * FROM dutychart WHERE date BETWEEN ? AND ?', (first_day_of_this_month_str, today_str))
+    rows = cursor.fetchall()
+    conn.close()
+
+    # Check if the person had duty in the this month
+    for row in rows:
+        if person in row[2] or person in row[3]:
+            print(f"{person} had duty in the last month on the date {row[1]}") 
+            return True
+        
+    print(f"{person} did not have duty in the last month")
+    return False
+    #returns false if the person didnt have duty this month, returns true and prints duty times if the person had duty this month
+
+############################################################################################################################4
+
+#Pick two person for the next duty(works as intended for now)
 def pickTwoPeople():
-
+    import sqlite3, random
     #add name of all employees to on another list
     conn = sqlite3.connect('data.db')
     cursor = conn.cursor()
@@ -103,14 +281,6 @@ def pickTwoPeople():
     rows = cursor.fetchall()
     conn.close()
     allPeople = [row[1] for row in rows]
-
-    #add the names of the people who came once within this month to a list
-    conn = sqlite3.connect('data.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT * FROM employees WHERE beenonduty = ?', (1,))
-    rows = cursor.fetchall()
-    conn.close()
-    beenOnDuty = [row[1] for row in rows]
 
     #draw the names of the people who has "0" for availability value from notavailablepeople table to a list
     conn = sqlite3.connect('data.db')
@@ -143,10 +313,10 @@ def pickTwoPeople():
     group3 = [row[1] for row in rows]
 
     #arrays are set
-    availablePeople = [i for i in allPeople if i not in beenOnDuty and i not in notAvailablePeopleAtAll]
-    availableGroup1 = [i for i in group1 if i not in beenOnDuty and i not in notAvailablePeopleAtAll]
-    availableGroup2 = [i for i in group2 if i not in beenOnDuty and i not in notAvailablePeopleAtAll]
-    availableGroup3 = [i for i in group3 if i not in beenOnDuty and i not in notAvailablePeopleAtAll]                        
+    availablePeople = [i for i in allPeople if i not in notAvailablePeopleAtAll]
+    availableGroup1 = [i for i in group1 if i not in notAvailablePeopleAtAll]
+    availableGroup2 = [i for i in group2 if i not in notAvailablePeopleAtAll]
+    availableGroup3 = [i for i in group3 if i not in notAvailablePeopleAtAll]                        
 
     # Resultant list to store the two chosen people
     chosen_people = []
@@ -156,18 +326,16 @@ def pickTwoPeople():
     #shuffle lists
     random.shuffle(availablePeople)
 
-    # Iterate through the available people
-    # and choose the first person
-    # from the first group they are in
-    # and the second person from the other groups
-    # If the first person is in group 1, merge group 2 and 3 and choose the second person from this list
-    # If the first person is in group 2, discard first person from group 2, then merge group 2 with group 1 and 3 and choose the second person from this list
-    # If the first person is in group 3, merge group 1 and 2 and choose the second person from this list
     for possible_first_person in availablePeople:
+        if lastMonthDutyCheck(possible_first_person):
+            continue
+    
         if possible_first_person in availableGroup1:
             availableGroup2.extend(availableGroup3)
             random.shuffle(availableGroup2)
             possible_second_person = availableGroup2[0]
+            if possible_second_person == possible_first_person or lastMonthDutyCheck(possible_second_person):
+                continue
             chosen_people.append(possible_first_person)
             chosen_people.append(possible_second_person)
             if len(chosen_people) >= 2:
@@ -178,6 +346,8 @@ def pickTwoPeople():
             availableGroup1.extend(availableGroup2)
             random.shuffle(availableGroup1)
             possible_second_person = availableGroup1[0]
+            if possible_second_person == possible_first_person or lastMonthDutyCheck(possible_second_person):
+                continue
             chosen_people.append(possible_first_person)
             chosen_people.append(possible_second_person)
             if len(chosen_people) >= 2:
@@ -186,6 +356,8 @@ def pickTwoPeople():
             availableGroup1.extend(availableGroup2)
             random.shuffle(availableGroup1)
             possible_second_person = availableGroup1[0]
+            if possible_second_person == possible_first_person or lastMonthDutyCheck(possible_second_person):
+                continue
             chosen_people.append(possible_first_person)
             chosen_people.append(possible_second_person)
             if len(chosen_people) >= 2:
@@ -197,3 +369,6 @@ def pickTwoPeople():
     
     # Return the two chosen people
     return chosen_people
+    #returns an array like this: ['Hakan AK', 'Emrah DURAN']
+
+print(pickTwoPeople())

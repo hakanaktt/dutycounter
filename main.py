@@ -1,8 +1,8 @@
 from PyQt6 import uic
-from PyQt6.QtWidgets import QApplication, QHBoxLayout, QComboBox, QDialog, QCalendarWidget, QMainWindow, QPushButton, QVBoxLayout, QWidget, QLabel, QLineEdit, QMessageBox, QTableWidget, QTableWidgetItem, QHeaderView,  QTabWidget, QVBoxLayout
-from PyQt6.QtGui import QIcon, QAction, QFont
+from PyQt6.QtWidgets import QApplication, QDialog, QMainWindow, QPushButton, QVBoxLayout,  QLabel, QLineEdit, QMessageBox,  QVBoxLayout
+from PyQt6.QtGui import QIcon, QFont
 from PyQt6.QtCore import Qt
-import sqlite3, subprocess, sys, datetime, random
+import sqlite3, subprocess, datetime
 from operations import pickTwoPeople
 
 chosen_people = []
@@ -45,7 +45,7 @@ class MainInterface(QMainWindow):
 
         #Main interface labels
         self.ui.mainLabel.setFont(font2)
-        self.ui.mainLabel.setText("Bu hafta muhtemel nöbetçileri:")
+        self.ui.mainLabel.setText(f"BuĞ hafta muhtemel nöbetçileri:")
         self.ui.firstPossiblePerson.setFont(font)
         self.ui.secondPossiblePerson.setFont(font)
 
