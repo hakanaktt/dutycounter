@@ -3,7 +3,9 @@ from PyQt6.QtWidgets import QApplication, QHBoxLayout, QComboBox, QDialog, QCale
 from PyQt6.QtGui import QIcon, QAction, QFont
 from PyQt6.QtCore import Qt
 import sqlite3, subprocess, sys, datetime, random
-from operations import pick_two_people
+from operations import pickTwoPeople
+
+chosen_people = []
 
 Form, Window = uic.loadUiType("dialog.ui")
 appVersion = "0.1 Alpha"
@@ -19,67 +21,89 @@ class MainInterface(QMainWindow):
         super().__init__()
         self.ui = Form()
         self.ui.setupUi(self)
+        self.setPossiblePeople()
+
         self.setWindowTitle(f"Adeko Duty Tracker v.{appVersion}")
         self.setWindowIcon(QIcon('adeko.ico'))
+        #Menu bar
         self.ui.actionEmployeeData.triggered.connect(self.open_employee_data)
-        self.ui.actionAdd_Absentees.triggered.connect(self.set_availabilities)
+        self.ui.actionAdd_Absentees.triggered.connect(self.set_absentees)
         self.ui.actionDuty_Chart.triggered.connect(self.all_time_duty_track)
-        self.ui.actionOfftime_Chart.triggered.connect(self.holiday_data)
+        self.ui.actionOfftime_Chart.triggered.connect(self.offtime_data)
+        self.ui.actionSettings.triggered.connect(self.settings)
+        self.ui.actionAdd_Offtime.triggered.connect(self.add_offtime)
+        self.ui.actionYearly_Report.triggered.connect(self.yearly_report)
+        self.ui.actionMonthly_Report.triggered.connect(self.monthly_report)
+        self.ui.actionCustom_Report.triggered.connect(self.custom_report)
+        self.ui.actionLicense.triggered.connect(self.license)
         self.ui.actionExit.triggered.connect(self.close)
         self.ui.actionAbout_the_program.triggered.connect(self.about)
-        self.ui.pushButton.clicked.connect(self.shuffle)
-        self.ui.pushButton_2.clicked.connect(self.confirm)
-        self.ui.label.setText("Henüz seçilmedi")
-        self.ui.label_2.setText("Henüz seçilmedi")
-        self.ui.label_3.setText("Henüz seçilmedi")
-        self.ui.label_4.setText("Henüz seçilmedi")
-        self.ui.label_5.setText("Henüz seçilmedi")
-        self.ui.label_6.setText("Henüz seçilmedi")
 
+        #Main interface buttons
+        self.ui.shuffleSelection.clicked.connect(self.shuffle)
+        self.ui.confirmSelection.clicked.connect(self.confirm)
+
+        #Main interface labels
+        self.ui.mainLabel.setFont(font2)
+        self.ui.mainLabel.setText("Bu hafta muhtemel nöbetçileri:")
+        self.ui.firstPossiblePerson.setFont(font)
+        self.ui.secondPossiblePerson.setFont(font)
+
+    #Function that sets the possible people for the duty for the start of the application
+    def setPossiblePeople(self):
+        chosen_people = pickTwoPeople()
+        self.ui.firstPossiblePerson.setText(chosen_people[0])
+        self.ui.secondPossiblePerson.setText(chosen_people[1])
+        print(chosen_people)
+    #Shuffle Button Function
     def shuffle(self):
-        chosen_people = pick_two_people()
-        self.label5.setText(chosen_people[0] + " and " + chosen_people[1])
+        chosen_people = pickTwoPeople()
+        self.ui.firstPossiblePerson.setText(chosen_people[0])
+        self.ui.secondPossiblePerson.setText(chosen_people[1])
+        print(chosen_people)
+    #Confirm Button Function
+    def confirm(self):
+        global chosen_people
+        conn = sqlite3.connect('data.db')
+        cursor = conn.cursor()
+        cursor.execute("INSERT INTO duties (first_person, second_person, date) VALUES (?, ?, ?)", (chosen_people[0], chosen_people[1], datetime.datetime.now()))
+        conn.commit()
+        conn.close()
+        QMessageBox.information(self, "Success", "The selection is saved successfully.")
 
+    #Menu bar functions
     def open_employee_data(self):
         subprocess.run(["python", "employeedata.py"])
-
-    def set_availabilities(self):
-        subprocess.run(["python", "selectunavailable.py"])
 
     def all_time_duty_track(self):
         subprocess.run(["python", "dutydata.py"])
 
-    def holiday_data(self):
-        subprocess.run(["python", "holidaydata.py"])
-        
+    def offtime_data(self):
+        subprocess.run(["python", "offtimedata.py"])
 
-    def confirm(self):
-        #calculate the month in format e.g. "June 2024"
-        currentMonth = datetime.date.today().strftime("%B %Y")
-        # Connect to the database
-        conn = sqlite3.connect('data.db')
-        cursor = conn.cursor()
-        
-        # Calculate the date
-        date = str(datetime.date.today() + datetime.timedelta((5-datetime.date.today().weekday()) % 7))
-        
-        # Check if there is a registry on the same date
-        cursor.execute('SELECT * FROM dutychart WHERE date = ?', (date,))
-        rows = cursor.fetchall()
-        
-        if rows:
-            QMessageBox.warning(self, 'Warning', 'There is already a registry on this date.')
-        else:
-            cursor.execute('INSERT INTO dutychart (date, firstonduty, secondonduty, month) VALUES (?, ?, ?, ?)', (date, self.label5.text().split(" ve ")[0], self.label5.text().split(" ve ")[1], currentMonth))
-            cursor.execute('UPDATE employees SET beenonduty = 1, lastdutydate = ? WHERE name = ?', (date, self.label5.text().split(" ve ")[0]))
-            cursor.execute('UPDATE employees SET beenonduty = 1, lastdutydate = ? WHERE name = ?', (date, self.label5.text().split(" ve ")[1]))
-            cursor.execute('UPDATE employees SET numberOfHolidays = numberOfHolidays + 1 WHERE name = ?', (self.label5.text().split(" ve ")[0],))
-            cursor.execute('UPDATE employees SET numberOfHolidays = numberOfHolidays + 1 WHERE name = ?', (self.label5.text().split(" ve ")[1],))
-            conn.commit()
-            self.label5.setText("Onaylandı")
-        
-        conn.close()
+    def settings(self):
+        #subprocess.run(["python", "settings.py"])
+        QMessageBox.information(self, "Settings", "Settings page is under construction.")
 
+    def add_offtime(self):
+        #subprocess.run(["python", "addofftime.py"])
+        QMessageBox.information(self, "Add Offtime", "Add Offtime page is under construction.")
+
+    def set_absentees(self):
+        subprocess.run(["python", "selectunavailable.py"])
+
+    def yearly_report(self):
+        QMessageBox.information(self, "Yearly Report", "Yearly report page is under construction.")
+
+    def monthly_report(self):
+        QMessageBox.information(self, "Monthly Report", "Monthly report page is under construction.")
+    
+    def custom_report(self):
+        QMessageBox.information(self, "Custom Report", "Custom report page is under construction.")
+    
+    def license(self):
+        QMessageBox.information(self, "License", "This software is free to use and open source. It is developed with Python and PyQt6. You can use it for free and modify it as you wish. You can not sell it or use it for commercial purposes without the permission of the developer.")
+    
     def about(self):
         QMessageBox.about(self, "About Adeko Duty Tracker", "This is a simple duty tracker for Adeko. You can see the employees and their data, set their availabilities, and see the next duty information."  + "\n" + "This software is free to use and open source. It is developed with Python and PyQt6." + "\n" + "This software is not an official software of Adeko. It is developed by an Adeko employee for personal use." + "\n" + "\n" + "Developed by Hakan AK, an ADeko Employee, 2024")
 

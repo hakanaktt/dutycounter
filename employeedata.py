@@ -62,7 +62,7 @@ class EmployeeDataApp(QMainWindow):
         rows = self.fetch_data()
         self.table.setRowCount(0)
         self.table.setColumnCount(7)
-        self.table.setHorizontalHeaderLabels(["ID", "Name", "Department", "Can Come Alone","Been on duty this month","Last duty date", "Number of Holidays"])
+        self.table.setHorizontalHeaderLabels(["ID", "Name", "Department", "Group","Been on duty this month","Last duty date", "Number of Holidays"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)  # Set fixed width for columns
         for i in range(7):
             self.table.setColumnWidth(i, 150)  # Set the width of each column to 100 pixels
