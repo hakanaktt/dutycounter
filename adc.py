@@ -7,7 +7,7 @@ from ops import pickDutyDuo, setAvailableGroup, findNextSaturday, checkNextDutyD
 global chosenDuo
 
 Form, Window = uic.loadUiType("md.ui")
-appVersion = "0.2 Alpha"
+appVersion = "0.2 Beta"
 fontLarge = QFont()
 fontLarge.setPointSize(16)
 fontLarge.setBold(True)
@@ -29,7 +29,7 @@ class MainInterface(QMainWindow):
         self.setStatus()
 
         self.setWindowTitle(f"Adeko Duty Tracker v.{appVersion}")
-        self.setWindowIcon(QIcon(os.path.join(os.path.dirname(sys.executable), 'adeko.ico')))
+        self.setWindowIcon(QIcon('adeko.ico'))
         #Menu bar
         self.ui.actionEmployeeData.triggered.connect(self.open_employee_data)
         self.ui.actionAdd_Absentees.triggered.connect(self.set_absentees)
@@ -109,13 +109,16 @@ class MainInterface(QMainWindow):
 
     #Menu bar functions
     def open_employee_data(self):
-        subprocess.run(["python", "ed.py"])
+        #subprocess.run(["python", "ed.py"])
+        os.system("ed.exe")
 
     def all_time_duty_track(self):
-        subprocess.run(["python", "dd.py"])
+        #subprocess.run(["python", "dd.py"])
+        os.system("dd.exe")
 
     def offtime_data(self):
-        subprocess.run(["python", "otd.py"])
+        #subprocess.run(["python", "otd.py"])
+        os.system("otd.exe")
 
     def settings(self):
         #subprocess.run(["python", "settings.py"])
@@ -126,7 +129,8 @@ class MainInterface(QMainWindow):
         QMessageBox.information(self, "Add Offtime", "Add Offtime page is under construction.")
 
     def set_absentees(self):
-        subprocess.run(["python", "su.py"])
+        #subprocess.run(["python", "su.py"])
+        os.system("su.exe")
 
     def yearly_report(self):
         QMessageBox.information(self, "Yearly Report", "Yearly report page is under construction.")
@@ -147,7 +151,80 @@ class MainInterface(QMainWindow):
         self.close()
 
 
-app = QApplication(sys.argv)
-window = MainInterface()
-window.show()
-sys.exit(app.exec())
+
+class LoginDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+
+        self.setWindowTitle("Login")
+        self.setGeometry(100, 100, 300, 300)
+        self.setWindowIcon(QIcon('adeko.ico'))
+
+        self.layout = QVBoxLayout()
+        self.layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        self.layout.setContentsMargins(20, 20, 20, 20)
+
+        self.appIcon = QLabel()
+        self.appIcon.setPixmap(QIcon('adeko.ico').pixmap(100, 100))
+        self.layout.addWidget(self.appIcon)
+
+        self.appLabel= QLabel(f"Adeko Duty Tracker v.{appVersion}")
+        self.appLabel.setFont(fontMid)
+        self.layout.addWidget(self.appLabel)
+
+        self.loginLabel= QLabel("Lütfen giriş yapın:")
+        self.loginLabel.setFont(fontSmall)
+        self.layout.addWidget(self.loginLabel)
+
+        self.username_label = QLabel("Kullanıcı Adı")
+        self.username_label.setFont(fontSmall)
+        self.layout.addWidget(self.username_label)
+
+        self.username_input = QLineEdit()
+        self.layout.addWidget(self.username_input)
+
+        self.password_label = QLabel("Parola")
+        self.password_label.setFont(fontSmall)
+        self.layout.addWidget(self.password_label)
+
+        self.password_input = QLineEdit()
+        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
+        self.layout.addWidget(self.password_input)
+
+        self.login_button = QPushButton("Giriş Yap")
+        self.login_button.clicked.connect(self.check_credentials)
+        self.layout.addWidget(self.login_button)
+
+        self.setLayout(self.layout)
+
+    def check_credentials(self):
+        username = self.username_input.text()
+        password = self.password_input.text()
+
+        # Connect to the database
+        conn = sqlite3.connect('db.db')
+        cursor = conn.cursor()
+
+        # Execute a query
+        cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
+
+        # Fetch all rows from the last executed statement
+        rows = cursor.fetchall()
+
+        # Close the connection
+        conn.close()
+
+        if rows:
+            self.accept()
+        else:
+            QMessageBox.warning(self, "Error", "Geçersiz kullanıcı adı veya parola. Lütfen tekrar deneyin.")
+
+if __name__ == "__main__":
+    app = QApplication([])
+    login_dialog = LoginDialog()
+
+    if login_dialog.exec() == QDialog.DialogCode.Accepted:
+        main_interface = MainInterface()
+        main_interface.show()
+        app.exec()
+                             
