@@ -40,7 +40,7 @@ def findNextSaturday():
 def setDutyData(firstPerson, secondPerson):
     import sqlite3
     # Connect to the database
-    conn = sqlite3.connect('data.db')
+    conn = sqlite3.connect('db.db')
     cursor = conn.cursor()
 
     nextSaturdayData = findNextSaturday()
@@ -68,7 +68,7 @@ def setDutyData(firstPerson, secondPerson):
 def deleteDutyData(date):
     import sqlite3
     # Connect to the database
-    conn = sqlite3.connect('data.db')
+    conn = sqlite3.connect('db.db')
     cursor = conn.cursor()
 
     # Delete the duty data from the database
@@ -86,7 +86,7 @@ def deleteDutyData(date):
 def checkNextDutyData():
     import sqlite3
     # Connect to the database
-    conn = sqlite3.connect('data.db')
+    conn = sqlite3.connect('db.db')
     cursor = conn.cursor()
 
     # Find the next Saturday
@@ -108,7 +108,7 @@ def checkNextDutyData():
 def bringNextDutyData():
     import sqlite3
     # Connect to the database
-    conn = sqlite3.connect('data.db')
+    conn = sqlite3.connect('db.db')
     cursor = conn.cursor()
 
     # Find the next Saturday
@@ -126,7 +126,6 @@ def bringNextDutyData():
     #returns an array like this: [('22-06-24', 'Hakan AK', 'Emrah DURAN', 'June', '2024')]
 
 ############################################################################################################################
-print(bringNextDutyData())
 
 #DUTY DATA REPORTING OPERATIONS
 
@@ -166,7 +165,7 @@ def thisMonthDutyData():
         current_day_of_month= current_date.strftime('%d-%m-%y')
     
         # Get the duty data of the current month
-        conn = sqlite3.connect('data.db')
+        conn = sqlite3.connect('db.db')
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM dutychart WHERE date BETWEEN ? AND ?', (first_day_of_month, current_day_of_month))
         rows = cursor.fetchall()
@@ -190,7 +189,7 @@ def thisYearDutyData():
         last_day_of_year = last_day.strftime('%d-%m-%y')
         
         # Get the duty data of the current year
-        conn = sqlite3.connect('data.db')
+        conn = sqlite3.connect('db.db')
         cursor = conn.cursor()
         cursor.execute('SELECT * FROM dutychart WHERE date BETWEEN ? AND ?', (first_day_of_year, last_day_of_year))
         rows = cursor.fetchall()
@@ -213,7 +212,7 @@ def dutyCountInSelectedYear(year):
     last_day_of_year = last_day.strftime('%d-%m-%y')
     
     # Get the duty data of the selected year
-    conn = sqlite3.connect('data.db')
+    conn = sqlite3.connect('db.db')
     cursor = conn.cursor()
     cursor.execute('SELECT firstonduty, secondonduty FROM dutychart WHERE date BETWEEN ? AND ?', (first_day_of_year, last_day_of_year))
     rows = cursor.fetchall()
@@ -249,7 +248,7 @@ def minMaxDutyInSelectedYear(year):
     last_day_of_year = last_day.strftime('%d-%m-%y')
     
     #Find the people who has most duties and least duties in the selected year
-    conn = sqlite3.connect('data.db')
+    conn = sqlite3.connect('db.db')
     cursor = conn.cursor()
     cursor.execute('SELECT firstonduty, secondonduty FROM dutychart WHERE date BETWEEN ? AND ?', (first_day_of_year, last_day_of_year))
     rows = cursor.fetchall()
@@ -292,7 +291,7 @@ def lastMonthDutyCheck(person):
     today_str = today.strftime('%d-%m-%y')
 
     # Get the duty data of the last month
-    conn = sqlite3.connect('data.db')
+    conn = sqlite3.connect('db.db')
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM dutychart WHERE date BETWEEN ? AND ?', (first_day_of_this_month_str, today_str))
     rows = cursor.fetchall()
@@ -310,7 +309,7 @@ def lastMonthDutyCheck(person):
 
 ############################################################################################################################
 
-def peopleWhoHadDutyBeforeThisMonth():
+def peopleWhoHadDutyThisMonth():
     import sqlite3, datetime
     # Write first day of this month and current day
     today = datetime.date.today()
@@ -319,7 +318,7 @@ def peopleWhoHadDutyBeforeThisMonth():
     today_str = today.strftime('%d-%m-%y')
 
     # Get the duty data of the last month
-    conn = sqlite3.connect('data.db')
+    conn = sqlite3.connect('db.db')
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM dutychart WHERE date BETWEEN ? AND ?', (first_day_of_this_month_str, today_str))
     rows = cursor.fetchall()
@@ -367,21 +366,21 @@ def pickDutyDuo():
 def setGroups():
     import sqlite3
     #groups are set
-    conn = sqlite3.connect('data.db')
+    conn = sqlite3.connect('db.db')
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM employees WHERE "group" = ?', ('1',))
     rows = cursor.fetchall()
     conn.close()
     group1 = {row[1] for row in rows}
     
-    conn = sqlite3.connect('data.db')
+    conn = sqlite3.connect('db.db')
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM employees WHERE "group" = ?', ('2',))
     rows = cursor.fetchall()
     conn.close()
     group2 = {row[1] for row in rows}
     
-    conn = sqlite3.connect('data.db')
+    conn = sqlite3.connect('db.db')
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM employees WHERE "group" = ?', ('3',))
     rows = cursor.fetchall()
@@ -395,7 +394,7 @@ def setGroups():
 def setAbsentiaGroup():
     import sqlite3
     #groups are set
-    conn = sqlite3.connect('data.db')
+    conn = sqlite3.connect('db.db')
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM notavailablepeople WHERE availability = ?', ('0',))
     rows = cursor.fetchall()
@@ -410,10 +409,29 @@ def setAvailableGroup():
     
     allMembers = setGroups()[0].union(setGroups()[1]).union(setGroups()[2])
     peopleInAbsentia = setAbsentiaGroup()
-    peopleHadDutybefore = peopleWhoHadDutyBeforeThisMonth()
+    peopleHadDutybefore = peopleWhoHadDutyThisMonth()
 
     peopleAvailable = allMembers - peopleInAbsentia - peopleHadDutybefore
 
     return peopleAvailable
 
 ############################################################################################################################
+
+
+def timeLeftUntilNextDuty():
+    import datetime
+    # Find the next Saturday
+    next_saturday_str = findNextSaturday()[0]
+    next_saturday = datetime.datetime.strptime(next_saturday_str, "%d-%m-%y")  # adjust the format string as per your date format
+
+    # Calculate the dates of the last three Saturdays
+    today = datetime.datetime.today()
+    timeLeft = next_saturday - today
+
+    # Round the seconds part
+    timeLeft_in_seconds = int(timeLeft.total_seconds())
+    timeLeft_rounded = datetime.timedelta(seconds=timeLeft_in_seconds)
+
+    return timeLeft_rounded
+
+print(timeLeftUntilNextDuty())

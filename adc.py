@@ -2,20 +2,23 @@ from PyQt6 import uic
 from PyQt6.QtWidgets import QApplication, QDialog, QMainWindow, QPushButton, QVBoxLayout,  QLabel, QLineEdit, QMessageBox,  QVBoxLayout
 from PyQt6.QtGui import QIcon, QFont
 from PyQt6.QtCore import Qt
-import sqlite3, subprocess, datetime
-from operations import pickDutyDuo, setAvailableGroup, findNextSaturday, checkNextDutyData, bringNextDutyData, setDutyData
-
+import sqlite3, subprocess, datetime, sys, os
+from ops import pickDutyDuo, setAvailableGroup, findNextSaturday, checkNextDutyData, bringNextDutyData, setDutyData, dutyCountInSelectedYear, timeLeftUntilNextDuty
 global chosenDuo
 
-
-Form, Window = uic.loadUiType("dialog.ui")
+Form, Window = uic.loadUiType("md.ui")
 appVersion = "0.2 Alpha"
-font = QFont()
-font.setPointSize(12)
+fontLarge = QFont()
+fontLarge.setPointSize(16)
+fontLarge.setBold(True)
 
-font2 = QFont()
-font2.setPointSize(12)
-font2.setBold(True)
+fontMid = QFont()
+fontMid.setPointSize(12)
+fontMid.setBold(True)
+
+fontSmall = QFont()
+fontSmall.setPointSize(10)
+fontSmall.setBold(False)
 
 class MainInterface(QMainWindow):
     def __init__(self):
@@ -24,10 +27,9 @@ class MainInterface(QMainWindow):
         self.ui.setupUi(self)
         self.chosenDuo = None
         self.setStatus()
-        self.showAvailablePeople()
 
         self.setWindowTitle(f"Adeko Duty Tracker v.{appVersion}")
-        self.setWindowIcon(QIcon('adeko.ico'))
+        self.setWindowIcon(QIcon(os.path.join(os.path.dirname(sys.executable), 'adeko.ico')))
         #Menu bar
         self.ui.actionEmployeeData.triggered.connect(self.open_employee_data)
         self.ui.actionAdd_Absentees.triggered.connect(self.set_absentees)
@@ -39,7 +41,7 @@ class MainInterface(QMainWindow):
         self.ui.actionMonthly_Report.triggered.connect(self.monthly_report)
         self.ui.actionCustom_Report.triggered.connect(self.custom_report)
         self.ui.actionLicense.triggered.connect(self.license)
-        self.ui.actionExit.triggered.connect(self.close)
+        self.ui.actionExit.triggered.connect(self.exitProgram)
         self.ui.actionAbout_the_program.triggered.connect(self.about)
 
         #Main interface buttons
@@ -47,10 +49,13 @@ class MainInterface(QMainWindow):
         self.ui.confirmSelection.clicked.connect(self.confirm)
 
         #Main interface labels
-        self.ui.mainLabel.setFont(font2)
-        self.ui.availablePeopleLabel.setFont(font)
+        self.ui.mainLabel.setFont(fontMid)
+        self.ui.availablePeopleLabel.setFont(fontMid)
         self.ui.availablePeopleLabel.setText(f"{findNextSaturday()[0]} Cumartesi müsait kişiler:")
-        self.ui.possibleCandidates.setFont(font)
+        self.ui.possibleCandidates.setFont(fontMid)
+        self.ui.statisticsLabel.setFont(fontMid)
+        self.ui.statisticsText.setFont(fontSmall)
+        self.ui.timeleft.setFont(fontMid)
 
     #Function that sets the possible people for the duty for the start of the application
     def setPossiblePeople(self):
@@ -64,6 +69,13 @@ class MainInterface(QMainWindow):
         for member in availablePeople:
             availablePeopleList += member + "\n"
         self.ui.availablePeopleList.setText(availablePeopleList)
+
+    def showStatistics(self):
+        
+        self.ui.statisticsLabel.setText(f"{findNextSaturday()[2]} yılı nöbet sayıları:")
+        duty_dict = dutyCountInSelectedYear(2024)
+        duty_str = "\n".join(f"{key}: {value}" for key, value in duty_dict.items())
+        self.ui.statisticsText.setText(duty_str)
 
     #Shuffle Button Function
     def shuffle(self):
@@ -79,6 +91,9 @@ class MainInterface(QMainWindow):
         QMessageBox.information(self, "Success", "The selection is saved successfully.")
 
     def setStatus(self):
+        self.showAvailablePeople()
+        self.showStatistics()
+        self.ui.timeleft.setText(f"Bir sonraki nöbet: {findNextSaturday()[0]} \n {timeLeftUntilNextDuty()} sonra nöbetimiz var.")
         if checkNextDutyData():
             self.ui.mainLabel.setText(f"{findNextSaturday()[0]} Cumartesi günü nöbetçileri belirlendi:")
             nextDutyData = bringNextDutyData()
@@ -94,13 +109,13 @@ class MainInterface(QMainWindow):
 
     #Menu bar functions
     def open_employee_data(self):
-        subprocess.run(["python", "employeedata.py"])
+        subprocess.run(["python", "ed.py"])
 
     def all_time_duty_track(self):
-        subprocess.run(["python", "dutydata.py"])
+        subprocess.run(["python", "dd.py"])
 
     def offtime_data(self):
-        subprocess.run(["python", "offtimedata.py"])
+        subprocess.run(["python", "otd.py"])
 
     def settings(self):
         #subprocess.run(["python", "settings.py"])
@@ -111,7 +126,7 @@ class MainInterface(QMainWindow):
         QMessageBox.information(self, "Add Offtime", "Add Offtime page is under construction.")
 
     def set_absentees(self):
-        subprocess.run(["python", "selectunavailable.py"])
+        subprocess.run(["python", "su.py"])
 
     def yearly_report(self):
         QMessageBox.information(self, "Yearly Report", "Yearly report page is under construction.")
@@ -128,79 +143,11 @@ class MainInterface(QMainWindow):
     def about(self):
         QMessageBox.about(self, "About Adeko Duty Tracker", "This is a simple duty tracker for Adeko. You can see the employees and their data, set their availabilities, and see the next duty information."  + "\n" + "This software is free to use and open source. It is developed with Python and PyQt6." + "\n" + "This software is not an official software of Adeko. It is developed by an Adeko employee for personal use." + "\n" + "\n" + "Developed by Hakan AK, an ADeko Employee, 2024")
 
+    def exitProgram(self):
+        self.close()
 
-class LoginDialog(QDialog):
-    def __init__(self):
-        super().__init__()
 
-        self.setWindowTitle("Login")
-        self.setGeometry(100, 100, 300, 300)
-        self.setWindowIcon(QIcon('adeko.ico'))
-
-        self.layout = QVBoxLayout()
-        self.layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        self.layout.setContentsMargins(20, 20, 20, 20)
-
-        self.appIcon = QLabel()
-        self.appIcon.setPixmap(QIcon('adeko.ico').pixmap(100, 100))
-        self.layout.addWidget(self.appIcon)
-
-        self.appLabel= QLabel(f"Adeko Duty Tracker v.{appVersion}")
-        self.appLabel.setFont(font2)
-        self.layout.addWidget(self.appLabel)
-
-        self.loginLabel= QLabel("Please enter your credentials")
-        self.loginLabel.setFont(font)
-        self.layout.addWidget(self.loginLabel)
-
-        self.username_label = QLabel("Username")
-        self.username_label.setFont(font)
-        self.layout.addWidget(self.username_label)
-
-        self.username_input = QLineEdit()
-        self.layout.addWidget(self.username_input)
-
-        self.password_label = QLabel("Password")
-        self.password_label.setFont(font)
-        self.layout.addWidget(self.password_label)
-
-        self.password_input = QLineEdit()
-        self.password_input.setEchoMode(QLineEdit.EchoMode.Password)
-        self.layout.addWidget(self.password_input)
-
-        self.login_button = QPushButton("Login")
-        self.login_button.clicked.connect(self.check_credentials)
-        self.layout.addWidget(self.login_button)
-
-        self.setLayout(self.layout)
-
-    def check_credentials(self):
-        username = self.username_input.text()
-        password = self.password_input.text()
-
-        # Connect to the database
-        conn = sqlite3.connect('data.db')
-        cursor = conn.cursor()
-
-        # Execute a query
-        cursor.execute("SELECT * FROM users WHERE username = ? AND password = ?", (username, password))
-
-        # Fetch all rows from the last executed statement
-        rows = cursor.fetchall()
-
-        # Close the connection
-        conn.close()
-
-        if rows:
-            self.accept()
-        else:
-            QMessageBox.warning(self, "Error", "Invalid username or password")
-
-if __name__ == "__main__":
-    app = QApplication([])
-    login_dialog = LoginDialog()
-
-    if login_dialog.exec() == QDialog.DialogCode.Accepted:
-        main_interface = MainInterface()
-        main_interface.show()
-        app.exec()
+app = QApplication(sys.argv)
+window = MainInterface()
+window.show()
+sys.exit(app.exec())

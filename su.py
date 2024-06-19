@@ -7,7 +7,7 @@ font = QFont()
 font.setPointSize(12)
 font.setBold(True)
 
-dbpath = "data.db"
+dbpath = "db.db"
 iconpath = "adeko.ico"
 
 class Availability(QMainWindow):

@@ -4,7 +4,7 @@ from PyQt6.QtCore import Qt
 import sqlite3
 import sys
 
-dbpath = "data.db"
+dbpath = "db.db"
 iconpath = "adeko.ico"
 
 class EmployeeDataApp(QMainWindow):
@@ -61,10 +61,10 @@ class EmployeeDataApp(QMainWindow):
     def display_table(self):
         rows = self.fetch_data()
         self.table.setRowCount(0)
-        self.table.setColumnCount(7)
-        self.table.setHorizontalHeaderLabels(["ID", "Name", "Department", "Group","Been on duty this month","Last duty date", "Number of Holidays"])
+        self.table.setColumnCount(6)
+        self.table.setHorizontalHeaderLabels(["ID", "Name", "Department", "Group","Last duty date", "Number of Holidays"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)  # Set fixed width for columns
-        for i in range(7):
+        for i in range(6):
             self.table.setColumnWidth(i, 150)  # Set the width of each column to 100 pixels
         for row_data in rows:
             row_number = self.table.rowCount()
@@ -128,7 +128,7 @@ class CreateEmployeeDialog(QDialog):
 
         self.layout = QVBoxLayout(self)
 
-        self.labels = ["Name", "Department", "Can Come Alone"]
+        self.labels = ["Name", "Department", "Group"]
         self.entries = {}
 
         for label in self.labels:
@@ -144,8 +144,8 @@ class CreateEmployeeDialog(QDialog):
         conn = sqlite3.connect(dbpath)
         cursor = conn.cursor()
 
-        cursor.execute('INSERT INTO employees (name, department, cancomealone, beenonduty, lastdutydate, numberOfHolidays) VALUES (?, ?, ?, ?, ?, ?)', 
-                       (self.entries["Name"].text(), self.entries["Department"].text(),  self.entries["Can Come Alone"].text() == "1", 0, "", 0))
+        cursor.execute('INSERT INTO employees (name, department, group, lastdutydate, numberOfHolidays) VALUES (?, ?, ?, ?, ?)',
+                       (self.entries["Name"].text(), self.entries["Department"].text(),  self.entries["Group"].text() == "1", 0, "", 0))
 
         cursor.execute('INSERT INTO notavailablepeople (name, availability) VALUES (?, ?)', (self.entries["Name"].text(), 1))
 
@@ -165,7 +165,7 @@ class UpdateEmployeeDialog(QDialog):
 
         self.layout = QVBoxLayout(self)
 
-        self.labels = ["Employee ID", "Name", "Department", "Can Come Alone", "Number of Holidays"]
+        self.labels = ["Employee ID", "Name", "Department", "Group", "Number of Holidays"]
         self.entries = {}
 
         for i, label in enumerate(self.labels):
@@ -182,8 +182,8 @@ class UpdateEmployeeDialog(QDialog):
         conn = sqlite3.connect(dbpath)
         cursor = conn.cursor()
 
-        cursor.execute('UPDATE employees SET name = ?, department = ?, cancomealone = ?, numberOfHolidays = ? WHERE id = ?', 
-                       (self.entries["Name"].text(), self.entries["Department"].text(), self.entries["Can Come Alone"].text() == "1",int(self.entries["Number of Holidays"].text()), int(self.entries["Employee ID"].text())))
+        cursor.execute('UPDATE employees SET name = ?, department = ?, group = ?, numberOfHolidays = ? WHERE id = ?',
+                       (self.entries["Name"].text(), self.entries["Department"].text(), self.entries["Group"].text() == "1",int(self.entries["Number of Holidays"].text()), int(self.entries["Employee ID"].text())))
 
         cursor.execute('UPDATE notavailablepeople SET name = ? WHERE name = ?', (self.entries["Name"].text(), self.entries["Name"].text()))
         conn.commit()

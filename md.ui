@@ -160,7 +160,7 @@
      <string>TextLabel</string>
     </property>
    </widget>
-   <widget class="QLabel" name="thisWeeksDuty">
+   <widget class="QLabel" name="statisticsText">
     <property name="geometry">
      <rect>
       <x>510</x>
@@ -302,20 +302,20 @@
      <enum>Qt::Vertical</enum>
     </property>
    </widget>
-   <widget class="QLabel" name="chosenDuty">
+   <widget class="QLabel" name="statisticsLabel">
     <property name="geometry">
      <rect>
       <x>510</x>
       <y>430</y>
       <width>301</width>
-      <height>16</height>
+      <height>21</height>
      </rect>
     </property>
     <property name="text">
      <string>TextLabel</string>
     </property>
    </widget>
-   <widget class="QLabel" name="thisWeeksDuty_2">
+   <widget class="QLabel" name="timeleft">
     <property name="geometry">
      <rect>
       <x>510</x>
@@ -332,6 +332,9 @@
     </property>
     <property name="text">
      <string>TextLabel</string>
+    </property>
+    <property name="wordWrap">
+     <bool>true</bool>
     </property>
    </widget>
    <widget class="Line" name="line_8">

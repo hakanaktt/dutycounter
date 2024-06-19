@@ -4,7 +4,7 @@ from PyQt6.QtCore import Qt
 import sqlite3
 import sys
 
-dbpath = "data.db"
+dbpath = "db.db"
 iconpath = "adeko.ico"
 
 class DutyChartApp(QMainWindow):
