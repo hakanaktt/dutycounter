@@ -81,8 +81,7 @@ class MainInterface(QMainWindow):
     def shuffle(self):
         print("Shuffle button clicked")
         self.chosenDuo = pickDutyDuo()
-        self.ui.firstPossiblePerson.setText(chosenDuo[0])
-        self.ui.secondPossiblePerson.setText(chosenDuo[1])
+        self.ui.possibleCandidates.setText(f"{self.chosenDuo[0]} ve {self.chosenDuo[1]}")
     #Confirm Button Function
     def confirm(self):
         setDutyData(self.chosenDuo[0], self.chosenDuo[1])
@@ -109,28 +108,24 @@ class MainInterface(QMainWindow):
 
     #Menu bar functions
     def open_employee_data(self):
-        #subprocess.run(["python", "ed.py"])
-        os.system("ed.exe")
+        subprocess.run(["python", "ed.py"])
 
     def all_time_duty_track(self):
-        #subprocess.run(["python", "dd.py"])
-        os.system("dd.exe")
+        subprocess.run(["python", "dd.py"])
 
     def offtime_data(self):
-        #subprocess.run(["python", "otd.py"])
-        os.system("otd.exe")
+        subprocess.run(["python", "otd.py"])
 
     def settings(self):
-        #subprocess.run(["python", "settings.py"])
+        subprocess.run(["python", "settings.py"])
         QMessageBox.information(self, "Settings", "Settings page is under construction.")
 
     def add_offtime(self):
-        #subprocess.run(["python", "addofftime.py"])
+        subprocess.run(["python", "addofftime.py"])
         QMessageBox.information(self, "Add Offtime", "Add Offtime page is under construction.")
 
     def set_absentees(self):
-        #subprocess.run(["python", "su.py"])
-        os.system("su.exe")
+        subprocess.run(["python", "su.py"])
 
     def yearly_report(self):
         QMessageBox.information(self, "Yearly Report", "Yearly report page is under construction.")
