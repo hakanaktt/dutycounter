@@ -1,7 +1,8 @@
 from PyQt6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget, QCheckBox, QPushButton, QLabel
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QIcon, QAction, QFont
 import sqlite3
+from ops import pullAvailabilityData
 
 font = QFont()
 font.setPointSize(12)
@@ -26,19 +27,7 @@ class Availability(QMainWindow):
         self.label.setFont(font)
         self.layout.addWidget(self.label)
 
-        # Connect to the database
-        conn = sqlite3.connect(dbpath)
-        cursor = conn.cursor()
-
-        # Execute a query
-        cursor.execute("SELECT * FROM employees")
-        cursor.execute("SELECT * FROM notavailablepeople")
-
-        # Fetch all rows from the last executed statement
-        rows = cursor.fetchall()
-
-        # Close the connection
-        conn.close()
+        rows = pullAvailabilityData(dbpath)
 
         self.checkboxes = []
         for row in rows:

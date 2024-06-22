@@ -434,4 +434,26 @@ def timeLeftUntilNextDuty():
 
     return timeLeft_rounded
 
-print(timeLeftUntilNextDuty())
+############################################################################################################################
+
+def pullAvailabilityData(dbpath):
+        import sqlite3
+
+     # Connect to the database
+        conn = sqlite3.connect(dbpath)
+        cursor = conn.cursor()
+
+        # Execute a query
+        cursor.execute("SELECT * FROM employees")
+        cursor.execute("SELECT * FROM notavailablepeople")
+
+        # Fetch all rows from the last executed statement
+        rows = cursor.fetchall()
+
+        # Close the connection
+        conn.close()
+
+        return rows
+
+############################################################################################################################
+
