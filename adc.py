@@ -3,7 +3,7 @@ from PyQt6.QtWidgets import QApplication, QDialog, QMainWindow, QPushButton, QVB
 from PyQt6.QtGui import QIcon, QFont
 from PyQt6.QtCore import Qt
 import sqlite3, subprocess, datetime, sys, os
-from ops import pickDutyDuo, setAvailableGroup, findNextSaturday, checkNextDutyData, bringNextDutyData, setDutyData, dutyCountInSelectedYear, timeLeftUntilNextDuty
+from ops import log_action, pickDutyDuo, setAvailableGroup, findNextSaturday, checkNextDutyData, bringNextDutyData, setDutyData, dutyCountInSelectedYear, timeLeftUntilNextDuty
 global chosenDuo
 
 Form, Window = uic.loadUiType("md.ui")
@@ -56,6 +56,7 @@ class MainInterface(QMainWindow):
         self.ui.statisticsLabel.setFont(fontMid)
         self.ui.statisticsText.setFont(fontSmall)
         self.ui.timeleft.setFont(fontMid)
+        self.ui.actionLog.setReadOnly(True)
 
     #Function that sets the possible people for the duty for the start of the application
     def setPossiblePeople(self):
@@ -106,27 +107,37 @@ class MainInterface(QMainWindow):
             self.ui.shuffleSelection.setEnabled(True)
             self.ui.confirmSelection.setEnabled(True)
 
+    def updateUI(self):
+        self.showAvailablePeople()
+        self.setStatus()
+        self.showStatistics()
+
     #Menu bar functions
     def open_employee_data(self):
         subprocess.run(["python", "ed.py"])
+        self.updateUI()
+        self.ui.actionLog.append("Opened Employee Data.")
 
     def all_time_duty_track(self):
         subprocess.run(["python", "dd.py"])
+        self.updateUI()
 
     def offtime_data(self):
         subprocess.run(["python", "otd.py"])
 
     def settings(self):
         #subprocess.run(["python", "settings.py"])
+        self.updateUI()
         QMessageBox.information(self, "Settings", "Settings page is under construction.")
 
     def add_offtime(self):
         #subprocess.run(["python", "addofftime.py"])
+        self.updateUI()
         QMessageBox.information(self, "Add Offtime", "Add Offtime page is under construction.")
 
     def set_absentees(self):
         subprocess.run(["python", "su.py"])
-        self.showAvailablePeople()
+        self.updateUI()
 
     def yearly_report(self):
         QMessageBox.information(self, "Yearly Report", "Yearly report page is under construction.")

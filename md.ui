@@ -350,6 +350,19 @@
      <enum>Qt::Horizontal</enum>
     </property>
    </widget>
+   <widget class="QTextEdit" name="actionLog">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>500</y>
+      <width>451</width>
+      <height>141</height>
+     </rect>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::WinPanel</enum>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
@@ -393,6 +406,7 @@
     </property>
     <addaction name="actionAbout_the_program"/>
     <addaction name="actionLicense"/>
+    <addaction name="actionYard_m"/>
    </widget>
    <addaction name="menuData"/>
    <addaction name="menuActions"/>
@@ -460,6 +474,11 @@
   <action name="actionCustom_Report">
    <property name="text">
     <string>Özelleştirilmiş Rapor</string>
+   </property>
+  </action>
+  <action name="actionYard_m">
+   <property name="text">
+    <string>Yardım</string>
    </property>
   </action>
  </widget>

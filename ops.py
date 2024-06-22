@@ -457,3 +457,23 @@ def pullAvailabilityData(dbpath):
 
 ############################################################################################################################
 
+import datetime
+import os
+
+def log_action(action):
+    log_directory = "log"
+    log_file_path = os.path.join(log_directory, "action.log")
+    
+    # Ensure the log directory exists
+    if not os.path.exists(log_directory):
+        os.makedirs(log_directory)
+    
+    try:
+        with open(log_file_path, "a") as log_file:  # Open the log file in append mode
+            timestamp = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S")
+            log_file.write(f"{timestamp} - {action}\n")  # Write the timestamp and action
+    except Exception as e:
+        print(f"Failed to write to log file: {e}")
+    
+    # Optional: Print the absolute path of the log file for confirmation
+    print(f"Logged action to {os.path.abspath(log_file_path)}")
